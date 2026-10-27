@@ -410,15 +410,39 @@
 
   // ---- top bar -------------------------------------------------------------------------------
 
+  // The clock, greeting and date follow this zone rather than the TV's own (Madrid = Paris).
+  var CLOCK_TZ = CONFIG.timeZone || 'Europe/Madrid';
+  var clockFmt = null;
+  try {
+    clockFmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: CLOCK_TZ, hour: 'numeric', minute: 'numeric', hour12: false,
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+    clockFmt.formatToParts(new Date());   // some engines build the formatter but lack formatToParts
+  } catch (e) {
+    clockFmt = null;                      // no timezone Intl on this webOS: use the TV's own clock
+  }
+
   function updateClock() {
-    var now = new Date(), h = now.getHours();
+    var now = new Date(), h, m, day, date, month;
+    if (clockFmt) {
+      var p = {};
+      clockFmt.formatToParts(now).forEach(function (x) { p[x.type] = x.value; });
+      h = +p.hour % 24;                   // hour12:false can report midnight as 24
+      m = +p.minute;
+      day = Math.max(0, DAYS.indexOf(p.weekday));
+      date = +p.day;
+      month = Math.max(0, MONTHS.indexOf(p.month));
+    } else {
+      h = now.getHours(); m = now.getMinutes();
+      day = now.getDay(); date = now.getDate(); month = now.getMonth();
+    }
     for (var k = 0; k < GREETINGS.length; k++) {
       if (h < GREETINGS[k][0]) { $('greeting').textContent = GREETINGS[k][1]; break; }
     }
-    var m = now.getMinutes();
     $('clock').textContent = ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m;
     $('ampm').textContent = h < 12 ? 'am' : 'pm';
-    $('date').textContent = DAYS[now.getDay()] + '  ' + now.getDate() + ' ' + MONTHS[now.getMonth()];
+    $('date').textContent = DAYS[day] + '  ' + date + ' ' + MONTHS[month];
   }
 
   /** Shows the Wi-Fi network name when the TV reports it, otherwise the connection type. */
@@ -586,6 +610,42 @@
     p.addEventListener('click', function () { activatePill(i); });
   });
 
+  // ---- background carousel --------------------------------------------------------------------
+
+  var bgEls = [$('bgA'), $('bgB')], bgFront = 0, bgTimer = null;
+
+  /**
+   * Shows the CONFIG.backgrounds photos one after another behind everything, crossfading through
+   * the two layers (the ambient glow's trick). Each photo is preloaded first, so the fade never
+   * catches a half-loaded frame; a missing file is skipped, and a list where nothing loads
+   * simply stays on the black page.
+   */
+  function startBackground() {
+    var list = (CONFIG.backgrounds || []).slice();
+    if (!list.length) return;
+    var i = 0, failed = 0;
+
+    function next() {
+      if (failed >= list.length) { clearInterval(bgTimer); bgTimer = null; return; }
+      var src = list[i];
+      i = (i + 1) % list.length;
+      var img = new Image();
+      img.onload = function () {
+        failed = 0;
+        var back = bgEls[1 - bgFront];
+        back.style.backgroundImage = 'url("' + src + '")';
+        back.style.opacity = '1';
+        bgEls[bgFront].style.opacity = '0';
+        bgFront = 1 - bgFront;
+      };
+      img.onerror = function () { failed++; next(); };   // skip it and try the following one now
+      img.src = src;
+    }
+
+    next();
+    bgTimer = setInterval(next, Math.max(3, CONFIG.backgroundSeconds || 20) * 1000);
+  }
+
   // ---- lifecycle -----------------------------------------------------------------------------
 
   /** Back from another app (or opened again from the shortcut): replay the entrance, keep the tile. */
@@ -605,6 +665,7 @@
   build();
   updateClock();
   setInterval(updateClock, 10000);
+  startBackground();
   watchNetwork();
   animateIn();
   zone = 'none';

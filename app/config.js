@@ -17,5 +17,14 @@ window.CONFIG = {
   liveTvApp: 'com.webos.app.livetv',
 
   // Tiles per row in the grid; the dock always has this many slots.
-  columns: 4
+  columns: 4,
+
+  // Background carousel: images from app/media/ (or anywhere in the app folder), listed here
+  // relative to index.html, shown in order and looping. Empty keeps the plain black background.
+  //   backgrounds: ['media/sunset.jpg', 'media/mountains.jpg'],
+  backgrounds: [],
+  backgroundSeconds: 20,      // seconds each image stays on screen
+
+  // The clock, greeting and date use this zone (Madrid and Paris share CET/CEST).
+  timeZone: 'Europe/Madrid'
 };
