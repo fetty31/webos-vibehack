@@ -22,7 +22,7 @@ window.CONFIG = {
   // Background carousel: images from app/media/ (or anywhere in the app folder), listed here
   // relative to index.html, shown in order and looping. Empty keeps the plain black background.
   //   backgrounds: ['media/sunset.jpg', 'media/mountains.jpg'],
-  backgrounds: [],
+  backgrounds: ['media/mama_papa.jpeg', 'media/iaia.jpeg', 'media/nosaltres.jpeg'],
   backgroundSeconds: 20,      // seconds each image stays on screen
 
   // The clock, greeting and date use this zone (Madrid and Paris share CET/CEST).
