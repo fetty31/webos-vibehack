@@ -38,11 +38,10 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var stage = $('stage'), tilesEl = $('tiles'), glass = $('glass'), hero = $('hero');
-  var ambients = [$('ambientA'), $('ambientB')], ambientFront = 0, ambientColor = null;
   var pills = [$('btnInputs'), $('btnWifi'), $('btnSettings')];
   var panel = $('inputsPanel');
 
-  var items = [];               // {app, el, color}
+  var items = [];               // {app, el, card}
   var zone = 'grid';            // 'grid' | 'top' | 'inputs'
   var focused = 0, pillFocus = 0, inputFocus = 0, inputRows = [];
   var offset = 0, heroShown = false, glassShown = false;
@@ -144,7 +143,7 @@
       var card = document.createElement('div');
       card.className = 'card';
       var img = document.createElement('img');
-      var item = { app: app, el: el, card: card, color: null };
+      var item = { app: app, el: el, card: card };
       img.onload = function () { paintTile(item, img); };
       img.src = app.icon;
       card.appendChild(img);
@@ -195,27 +194,17 @@
    * reads as a banner. LG's system icons are glyphs on transparent: use the app's own colour.
    */
   function paintTile(item, img) {
-    var px = null, edge = null;
+    var edge = null;
     try {
-      var c = document.createElement('canvas');
-      c.width = 12; c.height = 12;
-      var g = c.getContext('2d');
-      g.drawImage(img, 0, 0, 12, 12);
-      px = g.getImageData(0, 0, 12, 12).data;
       edge = edgeColor(img);
     } catch (e) { /* tainted canvas: fall back to the app's colour */ }
 
-    var glyphColor = null;
     if (edge && edge[3] > 200) {
       item.card.style.background = 'rgb(' + edge[0] + ',' + edge[1] + ',' + edge[2] + ')';
     } else {
       item.card.classList.add('glyph');
       item.card.style.background = glyphBackground(item.app.iconColor);
-      glyphColor = glyphBackground(item.app.iconColor) === '#2c2c2e' ? null : parseColor(item.app.iconColor);
     }
-    // A white glyph says nothing about the app: glow in the tile's colour instead.
-    item.color = glyphColor || (px ? vividColor(px) : parseColor(item.app.iconColor));
-    if (items[focused] === item) setAmbient(item.color);
   }
 
   /**
@@ -240,29 +229,6 @@
     return 'rgb(' + c.join(',') + ')';
   }
 
-  /** A vivid colour from the icon: the most saturated, not too dark pixel, or the lifted average. */
-  function vividColor(px) {
-    var best = null, bestScore = -1, sum = [0, 0, 0], n = 0;
-    for (var i = 0; i < px.length; i += 4) {
-      if (px[i + 3] < 128) continue;
-      var p = [px[i], px[i + 1], px[i + 2]];
-      sum[0] += p[0]; sum[1] += p[1]; sum[2] += p[2]; n++;
-      var hsv = rgbToHsv(p);
-      var score = hsv[1] * Math.min(1, hsv[2] * 1.4);
-      if (score > bestScore) { bestScore = score; best = p; }
-    }
-    if (!n) return [68, 68, 68];
-    if (bestScore < 0.25) {   // nearly monochrome icon (e.g. white): its average, lifted
-      var avg = rgbToHsv([sum[0] / n, sum[1] / n, sum[2] / n]);
-      avg[2] = Math.max(avg[2], 0.55);
-      return hsvToRgb(avg);
-    }
-    var h = rgbToHsv(best);
-    h[1] = Math.min(1, h[1] * 1.1);
-    h[2] = Math.max(0.5, h[2]);
-    return hsvToRgb(h);
-  }
-
   function parseColor(hex) {
     var m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
     if (!m) return null;
@@ -281,18 +247,6 @@
       if (h < 0) h += 360;
     }
     return [h, max ? d / max : 0, max];
-  }
-
-  function hsvToRgb(hsv) {
-    var h = hsv[0], s = hsv[1], v = hsv[2];
-    var c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c, rgb;
-    if (h < 60) rgb = [c, x, 0];
-    else if (h < 120) rgb = [x, c, 0];
-    else if (h < 180) rgb = [0, c, x];
-    else if (h < 240) rgb = [0, x, c];
-    else if (h < 300) rgb = [x, 0, c];
-    else rgb = [c, 0, x];
-    return rgb.map(function (k) { return Math.round((k + m) * 255); });
   }
 
   // ---- focus & glass -------------------------------------------------------------------------
@@ -335,7 +289,6 @@
 
     if (row === 0) showHero(items[i]);
     else hideHero();
-    setAmbient(items[i].color);   // the glow follows the focused tile in every row
   }
 
   function hideGlass() {
@@ -365,27 +318,12 @@
         hero.style.opacity = '1';
       }, 120);
     }
-    setAmbient(item.color);
   }
 
   function hideHero() {
     if (!heroShown) return;
     heroShown = false;
     hero.style.opacity = '0';
-  }
-
-  /** Crossfades the glow to a new colour by swapping between two layers. */
-  function setAmbient(color) {
-    if (!color) return;
-    var key = color.join(',');
-    if (key === ambientColor) return;
-    ambientColor = key;
-    var back = ambients[1 - ambientFront];
-    back.style.background = 'radial-gradient(circle 1190px at 32% 42%, rgba(' + key + ',0.36) 0%, rgba(' +
-      key + ',0.15) 50%, rgba(' + key + ',0) 100%)';
-    back.style.opacity = '1';
-    ambients[ambientFront].style.opacity = '0';
-    ambientFront = 1 - ambientFront;
   }
 
   function focusPill(i) {
@@ -624,7 +562,7 @@
 
   /**
    * Shows the CONFIG.backgrounds photos one after another behind everything, crossfading through
-   * the two layers (the ambient glow's trick). Each photo is preloaded first, so the fade never
+   * the two layers. Each photo is preloaded first, so the fade never
    * catches a half-loaded frame; a missing file is skipped, and a list where nothing loads
    * simply stays on the black page.
    */
@@ -654,10 +592,41 @@
     bgTimer = setInterval(next, Math.max(3, CONFIG.backgroundSeconds || 20) * 1000);
   }
 
+  // ---- idle ----------------------------------------------------------------------------------
+
+  var IDLE_MS = 60000, idleTimer = null, idle = false;
+
+  function wake() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(sleep, IDLE_MS);
+    if (!idle) return;
+    idle = false;
+    document.body.classList.remove('idle');
+  }
+
+  function sleep() {
+    idle = true;
+    document.body.classList.add('idle');
+  }
+
+  function activity(e) {
+    var wasIdle = idle;
+    wake();
+    if (wasIdle && e.type !== 'mousemove') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }
+
+  ['keydown', 'keyup', 'mousemove', 'click'].forEach(function (type) {
+    document.addEventListener(type, activity, true);
+  });
+
   // ---- lifecycle -----------------------------------------------------------------------------
 
   /** Back from another app (or opened again from the shortcut): replay the entrance, keep the tile. */
   function resume() {
+    wake();
     if (editing) finishEdit(false);
     updateClock();
     if (zone === 'inputs') panel.classList.add('hidden');
@@ -678,4 +647,5 @@
   animateIn();
   zone = 'none';
   focusTile(0);
+  wake();
 })();
