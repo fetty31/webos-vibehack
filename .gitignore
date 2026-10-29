@@ -11,3 +11,4 @@ app/largeIcon.png
 app/media/*
 !app/media/.gitkeep
 .DS_Store
+.opencode
