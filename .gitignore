@@ -4,6 +4,7 @@ build/
 venv/
 __pycache__/
 app/apps.js
+app/media-list.js
 app/icons/
 app/icon.png
 app/largeIcon.png

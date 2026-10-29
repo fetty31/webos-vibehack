@@ -561,13 +561,39 @@
   var bgEls = [$('bgA'), $('bgB')], bgFront = 0, bgTimer = null;
 
   /**
-   * Shows the CONFIG.backgrounds photos one after another behind everything, crossfading through
-   * the two layers. Each photo is preloaded first, so the fade never
-   * catches a half-loaded frame; a missing file is skipped, and a list where nothing loads
+   * Shows the photos of the CONFIG.backgroundDir folder one after another behind everything,
+   * crossfading through the two layers. media-list.js (written by gen-media-list.py when the
+   * app is installed) holds the folder's files; without that file - a preview served over
+   * http - the folder is listed directly. Each photo is preloaded first, so the fade never
+   * catches a half-loaded frame; a missing file is skipped, and a folder where nothing loads
    * simply stays on the black page.
    */
   function startBackground() {
-    var list = (CONFIG.backgrounds || []).slice();
+    var dir = (CONFIG.backgroundDir || '').trim().replace(/^\.?\//, '').replace(/\/+$/, '');
+    if (!dir) return;
+    if (window.MEDIA_LIST) runCarousel(MEDIA_LIST);
+    else listFolder(dir, runCarousel);
+  }
+
+  /** Fallback for previews: the packaged app runs from file://, where folders cannot be listed. */
+  function listFolder(dir, done) {
+    if (typeof fetch !== 'function') return;
+    fetch(dir + '/')
+      .then(function (res) { return res.ok ? res.text() : ''; })
+      .then(function (html) {
+        var found = [], re = /href="([^"]+)"/g, m;
+        while ((m = re.exec(html))) {
+          var name = decodeURIComponent(m[1]).replace(/^\.\//, '');
+          if (name.indexOf('/') < 0 && /\.(jpe?g|png|gif|webp|bmp|avif)$/i.test(name)) {
+            found.push(dir + '/' + name);
+          }
+        }
+        done(found);
+      })
+      .catch(function () {});   // file:// or no listing: stay on the black page
+  }
+
+  function runCarousel(list) {
     if (!list.length) return;
     var i = 0, failed = 0;
 

@@ -97,7 +97,9 @@ and Settings at the top. The header slides away when the grid scrolls into it.
 saved on the TV.
 
 **Configure** in [`app/config.js`](app/config.js): the starting dock, apps to hide, the Live TV
-app and the number of columns. App ids come from `venv/bin/python sync-apps.py $TV_HOST --list`.
+app, the number of columns, and the photo folder rotating behind the launcher (`backgroundDir`;
+its images are listed at install time by [`gen-media-list.py`](gen-media-list.py)). App ids come
+from `venv/bin/python sync-apps.py $TV_HOST --list`.
 Changing `dockApps` resets an order arranged on the TV.
 
 ## Cleaning up LG's home
@@ -128,6 +130,7 @@ For when you do land on it. Names vary a little by webOS version:
 | [`app/`](app/) | The launcher: `index.html`, `style.css`, `app.js`, `config.js`, `appinfo.json` |
 | [`install.sh`](install.sh) | Syncs your apps, packages and installs the launcher, and opens it |
 | [`sync-apps.py`](sync-apps.py) | Reads apps, icons and HDMI inputs from the TV into `app/apps.js` and `app/icons/` |
+| [`gen-media-list.py`](gen-media-list.py) | Lists `CONFIG.backgroundDir`'s photos into `app/media-list.js` for the background carousel |
 | [`home-watch.py`](home-watch.py) | Sends the Home button to the launcher |
 | [`home-watch-mac.sh`](home-watch-mac.sh) | Runs the watcher as a macOS background service |
 | [`lgtv.py`](lgtv.py) | Pairs with and talks to the TV's remote-control service |

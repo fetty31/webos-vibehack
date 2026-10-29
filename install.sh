@@ -20,6 +20,7 @@ ares() {
 PY="${PY:-python3}"
 [ -x venv/bin/python ] && PY=venv/bin/python
 "$PY" sync-apps.py "$TV_HOST"
+"$PY" gen-media-list.py
 
 if [ ! -f app/icon.png ]; then
   # The webOS app list wants PNG icons: 80px and 130px.
