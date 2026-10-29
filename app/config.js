@@ -19,9 +19,9 @@ window.CONFIG = {
   // Tiles per row in the grid; the dock always has this many slots.
   columns: 4,
 
-  // Background carousel: every image in this folder (relative to the app folder), shown in
-  // name order and looping. Empty keeps the plain black background. install.sh lists the
-  // folder's files into media-list.js, so add or remove photos and reinstall to refresh.
+  // Background carousel: every image in this folder (relative to the app folder), shown in a
+  // random order and looping. Empty keeps the plain black background. install.sh lists and
+  // shuffles the folder's files into media-list.js, so reinstall to reshuffle or refresh.
   backgroundDir: 'media',
   backgroundSeconds: 20,      // seconds each image stays on screen
 
