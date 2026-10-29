@@ -18,6 +18,33 @@ html, body {
   cursor: default;
 }
 
+/* ---- background carousel ---------------------------------------------------------------------- */
+
+.bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1800ms ease;
+  pointer-events: none;
+}
+
+/* Dark overlay over the photos so the white text and frosted pills stay readable.
+   Over the default black page it is invisible, so it can stay on permanently. */
+#bgScrim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.52), rgba(0, 0, 0, 0.38) 45%, rgba(0, 0, 0, 0.58));
+  pointer-events: none;
+}
+
 /* ---- ambient glow ---------------------------------------------------------------------------- */
 
 .ambient {
